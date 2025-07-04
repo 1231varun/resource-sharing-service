@@ -9,14 +9,14 @@ export interface User {
 export interface Group {
   id: string;
   name: string;
-  description?: string;
+  description: string | null;
   createdAt: Date;
 }
 
 export interface Resource {
   id: string;
   name: string;
-  description?: string;
+  description: string | null;
   isGlobal: boolean;
   createdAt: Date;
 }

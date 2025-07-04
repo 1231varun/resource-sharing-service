@@ -18,16 +18,52 @@
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
     "db:seed": "tsx src/database/seed.ts",
-    "prepare": "husky install"
+    "postman:generate": "node scripts/generate-postman-collection.js",
+    "docs:generate": "npm run postman:generate",
+    "prepare": "husky install",
+    "setup": "npm run setup:env && npm run setup:db && npm run verify",
+    "setup:env": "echo 'DATABASE_URL=\"postgresql://'$(whoami)'@localhost:5432/resource_sharing_db\"' > .env && echo 'PORT=3000' >> .env && echo 'NODE_ENV=development' >> .env",
+    "setup:db": "npm run db:init && npm run db:seed",
+    "setup:fresh": "npm run db:reset && npm run verify",
+    "db:init": "npx prisma migrate dev --name init",
+    "db:reset": "npx prisma migrate reset --force",
+    "db:verify": "npx prisma db pull --print",
+    "verify": "npm run health && npm run db:verify && echo '✅ All systems operational!'",
+    "health": "curl -f http://localhost:3000/health || echo '❌ Server not running. Run: npm run dev'",
+    "dev:fresh": "npm run start:db && npm run db:reset && npm run dev",
+    "dev:db": "npm run db:studio & npm run dev",
+    "clean": "rm -rf dist node_modules/.cache .eslintcache",
+    "docs:open": "open http://localhost:3000/docs",
+    "docs:serve": "echo 'API docs will be available at http://localhost:3000/docs when server is running' && npm run dev",
+    "api:test": "curl -s http://localhost:3000/resources/stats | head -c 200 && echo '...'",
+    "full:setup": "npm install && npm run setup && echo '🎉 Setup complete! Run: npm run dev'",
+    "shutdown": "npm run shutdown:services && npm run clean && echo '✅ Graceful shutdown complete'",
+    "shutdown:services": "npm run stop:server && npm run stop:db",
+    "shutdown:nuclear": "npm run shutdown:services && npm run clean:database && npm run clean:full && echo '💥 Nuclear cleanup complete - everything reset!'",
+    "stop:server": "lsof -ti:3000 | xargs kill -TERM 2>/dev/null || echo 'ℹ️  No server running on port 3000'",
+    "stop:db": "brew services stop postgresql@15 || echo 'ℹ️  PostgreSQL service not running'",
+    "start:db": "brew services start postgresql@15 && sleep 2 && echo '✅ PostgreSQL started'",
+    "clean:database": "npm run stop:db && sleep 1 && npm run start:db && (/opt/homebrew/Cellar/postgresql@15/15.13/bin/dropdb resource_sharing_db 2>/dev/null || dropdb resource_sharing_db 2>/dev/null || echo 'ℹ️  Database already removed')",
+    "clean:full": "npm run clean && rm -rf .env prisma/migrations && npm cache clean --force",
+    "restart": "npm run shutdown && npm run start:db && npm run setup && npm run dev",
+    "restart:fresh": "npm run shutdown:nuclear && npm run start:db && npm run full:setup && npm run dev"
   },
-  "keywords": ["resource-sharing", "access-control", "rbac", "fastify", "typescript"],
+  "keywords": [
+    "resource-sharing",
+    "access-control",
+    "rbac",
+    "fastify",
+    "typescript"
+  ],
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@fastify/env": "^4.3.0",
     "@fastify/cors": "^9.0.1",
+    "@fastify/env": "^4.3.0",
     "@fastify/helmet": "^11.1.1",
     "@fastify/rate-limit": "^9.1.0",
+    "@fastify/swagger": "^8.15.0",
+    "@fastify/swagger-ui": "^2.1.0",
     "@prisma/client": "^5.7.1",
     "fastify": "^4.25.2",
     "fastify-plugin": "^4.5.1",
@@ -54,10 +90,13 @@
     "node": ">=18.0.0",
     "npm": ">=8.0.0"
   },
+  "prisma": {
+    "seed": "tsx src/database/seed.ts"
+  },
   "lint-staged": {
     "*.{ts,js}": [
       "eslint --fix",
       "prettier --write"
     ]
   }
-} 
+}

@@ -10,9 +10,9 @@ async function start(): Promise<void> {
 
     await app.listen({ port, host });
     
-    console.log(`🚀 Server running on http://${host}:${port}`);
-    console.log(`📋 Health check: http://${host}:${port}/health`);
-    console.log(`🌍 Environment: ${process.env['NODE_ENV'] || 'development'}`);
+    console.log(`Server running on http://${host}:${port}`);
+    console.log(`Health check: http://${host}:${port}/health`);
+    console.log(`Environment: ${process.env['NODE_ENV'] || 'development'}`);
     
   } catch (error) {
     console.error('Error starting server:', error);
@@ -31,6 +31,6 @@ process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 // Start the server
 start().catch((error) => {
-  console.error('💥 Failed to start server:', error);
+  console.error('Failed to start server:', error);
   process.exit(1);
 }); 
