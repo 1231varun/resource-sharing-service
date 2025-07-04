@@ -61,7 +61,7 @@ resource_shares (
 
 **Validation Strategy**:
 - **Database Level**: Triggers to validate target_id references
-- **Application Level**: TypeScript types + Zod validation
+- **Application Level**: TypeScript types + Fastify schema validation
 - **Dual Protection**: Prevents data corruption at both layers
 
 ### 4. User-Group Relationship
@@ -91,7 +91,7 @@ user_groups (
 ```sql
 -- Critical performance indexes
 CREATE INDEX idx_resource_shares_resource_lookup ON resource_shares (resource_id, share_type);
-CREATE INDEX idx_resource_shares_target_lookup ON resource_shares (target_id, target_type);
+CREATE INDEX idx_resource_shares_target_lookup ON resource_shares (target_id, share_type);
 CREATE INDEX idx_user_groups_user ON user_groups (user_id);
 CREATE INDEX idx_resources_global ON resources (is_global) WHERE is_global = true;
 ```
@@ -127,7 +127,10 @@ CREATE INDEX idx_resources_global ON resources (is_global) WHERE is_global = tru
 **Endpoints**:
 - `GET /resource/:id/access-list` - Resource-centric access information
 - `GET /user/:id/resources` - User-centric resource listing
-- `GET /resources/with-user-count` - Aggregation for reporting
+- `GET /users` - Basic user management (GET only)
+- `GET /users/:id` - Single user retrieval
+- `GET /user/:id/access-check/:resourceId` - Fast access validation
+- `GET /resources/stats` - Resource statistics for reporting
 - `GET /users/with-resource-count` - User access statistics
 
 **Rationale**:
@@ -147,12 +150,44 @@ CREATE INDEX idx_resources_global ON resources (is_global) WHERE is_global = tru
 
 ### 9. Validation Approach
 
-**Decision**: Dual validation with Zod + Database constraints
+**Decision**: Fastify built-in validation with TypeScript type safety
 
 **Rationale**:
-- **Runtime Safety**: Zod catches type errors at API boundaries
+- **Runtime Safety**: Fastify schema validation at API boundaries
 - **Data Integrity**: Database constraints prevent corruption
-- **Developer Experience**: TypeScript + Zod provides excellent IntelliSense
+- **Developer Experience**: TypeScript provides excellent IntelliSense
+- **Performance**: No additional validation overhead (Zod not needed)
+- **Documentation**: Fastify schemas auto-generate OpenAPI specs
+
+---
+
+## 🔒 Security Decisions
+
+### 10. SQL Injection Prevention
+
+**Decision**: Complete elimination of raw SQL queries with parameterized alternatives
+
+**Implementation Changes**:
+- **getResourceAccessList**: Raw SQL → Parameterized `$queryRaw`
+- **getUserResources**: Complex if-else templates → Prisma query builder
+- **getResourcesWithUserCount**: Raw SQL branches → TypeScript processing
+- **getUsersWithResourceCount**: Raw SQL interpolation → Prisma relationships
+
+**Before (Vulnerable)**:
+```sql
+$queryRawUnsafe(`SELECT * FROM users WHERE id = '${userId}'`)
+```
+
+**After (Secure)**:
+```sql
+$queryRaw`SELECT * FROM users WHERE id = ${userId}`
+```
+
+**Rationale**:
+- **Security**: Zero SQL injection attack surface
+- **Type Safety**: Prisma provides compile-time query validation
+- **Maintainability**: Reduced complex SQL string manipulation
+- **Performance**: Database query planner optimization
 
 ---
 
@@ -183,8 +218,16 @@ CREATE INDEX idx_resources_global ON resources (is_global) WHERE is_global = tru
 | Hybrid global sharing | Dec 2024 | Deduplication + performance | High |
 | Polymorphic shares table | Dec 2024 | Query efficiency + flexibility | Medium |
 | TypeScript strict mode | Dec 2024 | Type safety in access control | High |
-| Dual validation strategy | Dec 2024 | Data integrity + DX | Medium |
+| Fastify validation over Zod | Dec 2024 | Built-in validation + OpenAPI generation | Medium |
+| SQL injection prevention | Dec 2024 | Security hardening | Critical |
+
+### Recent Security Improvements (Added)
+
+- **Eliminated all raw SQL queries**: Replaced with parameterized alternatives
+- **Removed string interpolation**: All user inputs properly escaped
+- **Enhanced type safety**: Removed `any` types from query results
+- **Leveraged Prisma query builder**: For complex access control logic
 
 ---
 
-*This document should be updated when new architectural decisions are made.* 
+*This document is updated to reflect the current implementation including security improvements and actual validation strategy.* 
