@@ -1,0 +1,98 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relationships
+  userGroups UserGroup[] @relation("UserToUserGroup")
+
+  @@map("users")
+  @@index([email])
+  @@index([createdAt])
+}
+
+model Group {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relationships  
+  userGroups UserGroup[] @relation("GroupToUserGroup")
+
+  @@map("groups")
+  @@index([name])
+  @@index([createdAt])
+}
+
+model UserGroup {
+  userId   String   @map("user_id")
+  groupId  String   @map("group_id")
+  joinedAt DateTime @default(now()) @map("joined_at")
+
+  // Relationships
+  user  User  @relation("UserToUserGroup", fields: [userId], references: [id], onDelete: Cascade)
+  group Group @relation("GroupToUserGroup", fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@id([userId, groupId])
+  @@map("user_groups")
+  @@index([userId])
+  @@index([groupId])
+  @@index([joinedAt])
+}
+
+model Resource {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  isGlobal    Boolean  @default(false) @map("is_global")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relationships
+  resourceShares ResourceShare[]
+
+  @@map("resources")
+  @@index([name])
+  @@index([isGlobal])
+  @@index([createdAt])
+}
+
+enum ShareType {
+  user
+  group
+
+  @@map("share_type")
+}
+
+model ResourceShare {
+  id         String    @id @default(cuid())
+  resourceId String    @map("resource_id")
+  shareType  ShareType @map("share_type")
+  targetId   String    @map("target_id")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  // Relationships
+  resource Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  
+  // Note: Polymorphic relationships handled in application logic
+  // targetId can reference either User.id or Group.id based on shareType
+
+  @@unique([resourceId, shareType, targetId])
+  @@map("resource_shares")
+  @@index([resourceId, shareType])
+  @@index([targetId, shareType])
+  @@index([createdAt])
+} 
