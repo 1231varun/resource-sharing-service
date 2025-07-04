@@ -5,6 +5,7 @@ import rateLimit from '@fastify/rate-limit';
 import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
 import { sharingRoutes } from './routes/sharing.routes';
+import { userRoutes } from './routes/users.routes';
 
 // Health check route
 async function healthRoutes(fastify: FastifyInstance): Promise<void> {
@@ -242,6 +243,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   // Register routes
   await app.register(healthRoutes);
   await app.register(sharingRoutes);
+  await app.register(userRoutes);
 
   // Global error handler
   app.setErrorHandler(async (error, request, reply) => {

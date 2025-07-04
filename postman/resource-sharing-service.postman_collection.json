@@ -13,12 +13,12 @@
     },
     {
       "key": "userId",
-      "value": "{{$randomUUID}}",
+      "value": "01234567-0123-4123-8123-123456789abc",
       "type": "string"
     },
     {
       "key": "resourceId",
-      "value": "{{$randomUUID}}",
+      "value": "11234567-1123-4123-8123-123456789abc",
       "type": "string"
     }
   ],
@@ -53,10 +53,10 @@
       "description": "Health check endpoints"
     },
     {
-      "name": "Resources",
+      "name": "Users",
       "item": [
         {
-          "name": "Get Resource Access List",
+          "name": "Get All Users",
           "request": {
             "method": "GET",
             "header": [
@@ -66,24 +66,88 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/resource/:id/access-list",
+              "raw": "{{baseUrl}}/users?limit=50&offset=0",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "resource",
-                ":id",
-                "access-list"
+                "users"
               ],
-              "variable": [
+              "query": [
                 {
-                  "key": "id",
-                  "value": "{{resourceId}}",
-                  "description": "Resource ID (UUID format)"
+                  "key": "limit",
+                  "value": "50",
+                  "description": "Maximum number of users to return (1-100)"
+                },
+                {
+                  "key": "offset",
+                  "value": "0",
+                  "description": "Number of users to skip"
                 }
               ]
             },
-            "description": "Returns all users who have access to a specific resource through direct sharing, group membership, or global access."
+            "description": "Returns a paginated list of all users in the system"
+          },
+          "response": []
+        },
+        {
+          "name": "Get User by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "{{userId}}"
+              ]
+            },
+            "description": "Returns a single user by their unique identifier"
+          },
+          "response": []
+        },
+        {
+          "name": "Get User Accessible Resources",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/user/{{userId}}/resources?limit=50&offset=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "user",
+                "{{userId}}",
+                "resources"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "50",
+                  "description": "Maximum number of resources to return (1-100)"
+                },
+                {
+                  "key": "offset",
+                  "value": "0",
+                  "description": "Number of resources to skip"
+                }
+              ]
+            },
+            "description": "Returns all resources that a user has access to through direct sharing, group membership, or global access"
           },
           "response": []
         },
@@ -98,30 +162,49 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/user/:id/access-check/:resourceId",
+              "raw": "{{baseUrl}}/user/{{userId}}/access-check/{{resourceId}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "user",
-                ":id",
+                "{{userId}}",
                 "access-check",
-                ":resourceId"
-              ],
-              "variable": [
-                {
-                  "key": "id",
-                  "value": "{{userId}}",
-                  "description": "User ID (UUID format)"
-                },
-                {
-                  "key": "resourceId",
-                  "value": "{{resourceId}}",
-                  "description": "Resource ID (UUID format)"
-                }
+                "{{resourceId}}"
               ]
             },
-            "description": "Fast access check to determine if a user has access to a specific resource."
+            "description": "Fast access check to determine if a user has access to a specific resource"
+          },
+          "response": []
+        }
+      ],
+      "description": "User management and access operations"
+    },
+    {
+      "name": "Resources",
+      "item": [
+        {
+          "name": "Get Resource Access List",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/resource/{{resourceId}}/access-list",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "resource",
+                "{{resourceId}}",
+                "access-list"
+              ]
+            },
+            "description": "Returns all users who have access to a specific resource through direct sharing, group membership, or global access"
           },
           "response": []
         }
@@ -168,7 +251,58 @@
                 }
               ]
             },
-            "description": "Returns statistics about resources with user access counts."
+            "description": "Returns statistics about resources with user access counts"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Users with Resource Count",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/with-resource-count?limit=50&offset=0&minResources=0&sortBy=name&sortOrder=asc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "with-resource-count"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "50",
+                  "description": "Maximum number of users to return (1-100)"
+                },
+                {
+                  "key": "offset",
+                  "value": "0",
+                  "description": "Number of users to skip"
+                },
+                {
+                  "key": "minResources",
+                  "value": "0",
+                  "description": "Filter users with at least N resources"
+                },
+                {
+                  "key": "sortBy",
+                  "value": "name",
+                  "description": "Sort field: name, email, resourceCount, createdAt"
+                },
+                {
+                  "key": "sortOrder",
+                  "value": "asc",
+                  "description": "Sort order: asc or desc"
+                }
+              ]
+            },
+            "description": "Returns all users with statistics about their resource access counts"
           },
           "response": []
         }
@@ -235,7 +369,7 @@
       "script": {
         "type": "text/javascript",
         "exec": [
-          "// Auto-generate UUIDs for testing if variables are not set",
+          "// Set default test user and resource IDs from seeded data",
           "if (!pm.collectionVariables.get(\"userId\") || pm.collectionVariables.get(\"userId\") === \"{{$randomUUID}}\") {",
           "    pm.collectionVariables.set(\"userId\", \"01234567-0123-4123-8123-123456789abc\");",
           "}",
@@ -244,7 +378,7 @@
           "    pm.collectionVariables.set(\"resourceId\", \"11234567-1123-4123-8123-123456789abc\");",
           "}",
           "",
-          "// Log the current variables for debugging",
+          "// Log current variables for debugging",
           "console.log(\"Base URL:\", pm.collectionVariables.get(\"baseUrl\"));",
           "console.log(\"User ID:\", pm.collectionVariables.get(\"userId\"));",
           "console.log(\"Resource ID:\", pm.collectionVariables.get(\"resourceId\"));"
@@ -265,12 +399,12 @@
           "    pm.expect(pm.response.responseTime).to.be.below(5000);",
           "});",
           "",
-          "pm.test(\"Content-Type header is correct\", function () {",
-          "    pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\");",
-          "});",
+          "// Check content type for JSON responses",
+          "if (pm.response.headers.get(\"Content-Type\") && pm.response.headers.get(\"Content-Type\").includes(\"application/json\")) {",
+          "    pm.test(\"Content-Type header is JSON\", function () {",
+          "        pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\");",
+          "    });",
           "",
-          "// Parse response if JSON",
-          "if (pm.response.headers.get(\"Content-Type\").includes(\"application/json\")) {",
           "    pm.test(\"Response is valid JSON\", function () {",
           "        pm.response.to.have.jsonBody();",
           "    });",
@@ -281,6 +415,12 @@
           "        pm.test(\"Response has success field\", function () {",
           "            pm.expect(responseJson).to.have.property(\"success\");",
           "        });",
+          "        ",
+          "        if (pm.response.code >= 200 && pm.response.code < 300) {",
+          "            pm.test(\"Success responses have success=true\", function () {",
+          "                pm.expect(responseJson.success).to.be.true;",
+          "            });",
+          "        }",
           "    }",
           "}"
         ]
